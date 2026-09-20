@@ -1,0 +1,11 @@
+# datasets and caches (download with scripts/run_experiments.py --stages prepare)
+data/
+# large model weights (the frozen head in results/checkpoints is small and kept)
+results/checkpoints/wavlm_finetuned.pt
+results_quick/
+space/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+results_local/

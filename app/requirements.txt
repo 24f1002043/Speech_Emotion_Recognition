@@ -1,0 +1,6 @@
+torch
+transformers
+librosa
+numpy
+pandas
+scikit-learn

@@ -1,0 +1,136 @@
+{
+ "name": "ravdess_random_wavlm_finetune_seed1",
+ "dataset": "ravdess",
+ "split": "random",
+ "model": "wavlm_finetune",
+ "seed": 1,
+ "hparams": {
+  "epochs": 12,
+  "lr_encoder": 3e-05,
+  "freeze_epochs": 3
+ },
+ "classes": [
+  "neutral",
+  "calm",
+  "happy",
+  "sad",
+  "angry",
+  "fearful",
+  "disgust",
+  "surprised"
+ ],
+ "sizes": {
+  "train": 1080,
+  "val": 120,
+  "test": 240
+ },
+ "test": {
+  "ua": 0.89453,
+  "wa": 0.89166,
+  "macro_f1": 0.89636,
+  "confusion": [
+   [
+    15,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    31,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    1,
+    25,
+    0,
+    4,
+    2,
+    0,
+    0
+   ],
+   [
+    0,
+    2,
+    0,
+    29,
+    1,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    1,
+    29,
+    0,
+    1,
+    1
+   ],
+   [
+    0,
+    0,
+    0,
+    4,
+    1,
+    27,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    31,
+    0
+   ],
+   [
+    0,
+    0,
+    2,
+    0,
+    1,
+    2,
+    0,
+    27
+   ]
+  ]
+ },
+ "cross": {},
+ "train_seconds": 278.38189,
+ "val_ua": 0.95312,
+ "best_epoch": 9,
+ "epochs_run": 12,
+ "layer_weights": [
+  0.06199,
+  0.06124,
+  0.06847,
+  0.08168,
+  0.0987,
+  0.113,
+  0.10973,
+  0.10411,
+  0.07973,
+  0.06102,
+  0.05739,
+  0.05296,
+  0.04991
+ ],
+ "device": "cuda",
+ "finished": "2026-09-2007:47:23"
+}
