@@ -166,3 +166,7 @@ hf upload <your-username>/speech-emotion-recognition space . --repo-type space
 * **WavLM**: Chen S. et al. (2022). *WavLM: Large-Scale Self-Supervised Pre-Training for Full Stack Speech
   Processing.* IEEE JSTSP. Weights: `microsoft/wavlm-base-plus`.
 * **SUPERB**: Yang S. et al. (2021). *SUPERB: Speech processing Universal PERformance Benchmark.* Interspeech.
+
+## Licence
+
+The code in this repository is released under the MIT License (see [LICENSE](LICENSE)). The datasets keep their own terms, described above.
