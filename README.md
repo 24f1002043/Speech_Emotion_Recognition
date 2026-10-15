@@ -78,7 +78,7 @@ Full tables, per-class recalls and every confusion matrix: [results/RESULTS.md](
 **Resume bullet, with the numbers actually measured:** Fine-tuned WavLM Base+ for 8-class speech emotion
 recognition on RAVDESS, reaching 79.4% unweighted accuracy on four unseen actors (80.7% with a frozen
 encoder) versus 54.6% for an MFCC-CNN baseline; demonstrated that a random split inflates the same pipeline
-to 87.5% through speaker leakage, and reported cross-corpus transfer to CREMA-D. Deployed a live Gradio demo.
+to 87.5% through speaker leakage, and reported cross-corpus transfer to CREMA-D. Built a Gradio demo that runs locally.
 <!-- RESULTS:END -->
 
 ## What is in here
