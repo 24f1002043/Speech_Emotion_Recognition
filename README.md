@@ -46,7 +46,7 @@ Two honest observations:
 
 * **Fine-tuning did not beat the frozen encoder on RAVDESS** (79.4 vs 80.7, well within seed noise). With 1,080
   training clips there is little for 94M parameters to learn. The first fine-tuning attempt was far worse
-  (56.6%) until the learning rate was lowered and a head-only warm-up added — chosen on validation only,
+  (56.6%) until the learning rate was lowered and a head-only warm-up added, chosen on validation only,
   see [docs/finetune_search.md](docs/finetune_search.md).
 * **Fine-tuning did help where it matters for generalisation**: on unseen CREMA-D speakers it scores 44.4%
   against the frozen model's 30.6%.
@@ -55,8 +55,8 @@ Two honest observations:
 
 ![frozen confusion](results/figures/confusion_actor_wavlm_frozen.png)
 
-Errors are not random: *happy* is confused with *surprised*, *sad* with *calm*. Neutral and calm — the pair
-RAVDESS itself distinguishes only by intensity — account for much of the remaining loss.
+Errors are not random: *happy* is confused with *surprised*, *sad* with *calm*. Neutral and calm, the pair
+RAVDESS itself distinguishes only by intensity, account for much of the remaining loss.
 
 ### Cross-corpus (the harder test)
 
@@ -148,7 +148,7 @@ python app/app.py              # local demo at http://127.0.0.1:7860
 
 The demo loads `results/checkpoints/wavlm_frozen_head.pt`: a 0.8 MB classifier head on top of the pretrained
 WavLM Base+, trained on actors 1–18 only, scoring **78.9% UA on the unseen test actors**. The frozen model is
-both the best of the three on unseen actors and small enough to commit, so the demo needs no large weights —
+both the best of the three on unseen actors and small enough to commit, so the demo needs no large weights;
 the encoder is pulled from the Hub at start-up. If `results/checkpoints/wavlm_finetuned.pt` is present (save it
 from a training run with `--save-ft-checkpoint`), the demo uses the fine-tuned model instead.
 
