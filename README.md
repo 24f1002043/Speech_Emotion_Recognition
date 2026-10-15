@@ -2,6 +2,19 @@
 
 > **A model that recognises 8 emotions from voice, tested only on actors it never heard.**
 
+**Abhiram Radhakrishnan** ·
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/24f1002043/Speech_Emotion_Recognition/blob/main/notebooks/train_colab.ipynb) ·
+Related paper: [*Whose Label? Actor Intent Versus Listener Perception in CREMA-D Speech Emotion Recognition* (PDF)](https://github.com/24f1002043/icassp/blob/main/paper/abhiram_icassp2027_preprint.pdf), submitted to IEEE ICASSP 2027, under review
+
+**Headline:** frozen WavLM Base+ reaches **80.7% UA on unseen actors** vs 54.6% for an MFCC-CNN; the same pipeline
+shows 86.5–87.5% on a random split (speaker leakage). Full table below.
+
+**Reproduce every number in one command** (or click the Colab badge, ~2–3 h on a free T4):
+
+```bash
+pip install -r requirements.txt && python scripts/run_experiments.py && python scripts/make_report.py
+```
+
 Many RAVDESS projects report 90%+ accuracy using a *random* train/test split. That split puts the same 24 actors,
 and near-identical takes of the same sentence, on both sides, so the model can partly recognise the *speaker*
 rather than the emotion. This project reports both numbers side by side:
