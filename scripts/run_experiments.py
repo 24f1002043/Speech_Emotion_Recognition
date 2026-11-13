@@ -1,17 +1,3 @@
-"""Run every experiment in the project and write one JSON file per run.
-
-Stages
-  prepare   download RAVDESS (+ CREMA-D) and cache 16 kHz trimmed audio
-  cnn       MFCC-CNN baseline            RAVDESS, actor + random split
-  frozen    frozen WavLM + layer-weighted head      "
-  finetune  fine-tuned WavLM                        "
-  cremad    cross-corpus: WavLM trained on CREMA-D (speaker-independent),
-            tested on unseen CREMA-D speakers and on all of RAVDESS
-
-Runs that already have a result file are skipped, so the script can be
-re-launched after a Colab disconnect. Test sets are only scored once, with the
-checkpoint chosen on validation UA.
-"""
 from __future__ import annotations
 
 import argparse
@@ -46,7 +32,6 @@ class Workspace:
         self._encoder = None
         self.quick_take = (lambda idx, k: np.sort(np.random.default_rng(0).permutation(idx)[:k])) if args.quick else None
 
-    # ------------------------------------------------------------ data
     def ravdess(self):
         if not hasattr(self, "rav"):
             self.rav = D.ravdess_metadata(D.download_ravdess(self.root))
@@ -76,7 +61,6 @@ class Workspace:
     def use_cremad(self):
         return not self.args.no_cremad
 
-    # ------------------------------------------------------------ SSL features
     def encoder(self):
         if self._encoder is None:
             from transformers import AutoModel
@@ -84,7 +68,6 @@ class Workspace:
         return self._encoder
 
     def pooled(self, dataset):
-        """(N, L, H) cached frozen features for every clip of a dataset."""
         if dataset not in self._pooled:
             suffix = "_quick" if self.args.quick else ""
             f = self.cache / f"{dataset}_pooled_{self.slug}{suffix}.npy"
@@ -93,7 +76,7 @@ class Workspace:
                 self._pooled[dataset] = np.load(f)
             else:
                 print(f"Extracting frozen {self.slug} features for {len(waves)} {dataset} clips...", flush=True)
-                if self.args.quick:  # only the clips a quick run touches
+                if self.args.quick:
                     need = set()
                     for kind in (["actor", "random"] if dataset == "ravdess" else ["cremad"]):
                         for v in self.split(kind).values():
@@ -111,7 +94,6 @@ class Workspace:
                 self._pooled[dataset] = X
         return self._pooled[dataset]
 
-    # ------------------------------------------------------------ bookkeeping
     def path(self, name):
         return self.out / "runs" / f"{name}.json"
 
@@ -125,13 +107,10 @@ class Workspace:
         c = " ".join(f"{k}={v['ua']:.3f}" for k, v in rec.get("cross", {}).items())
         print(f"[done] {name}: val UA {rec['val_ua']:.3f} | test UA {rec['test']['ua']:.3f} "
               f"WA {rec['test']['wa']:.3f} {c}", flush=True)
-        # The full record also goes to the log, so a notebook's saved output keeps every
-        # result even if the machine that wrote results/runs/ is recycled.
         print("RESULT_JSON " + json.dumps(rec, separators=(",", ":")), flush=True)
 
 
 def cross_eval_ravdess_model(ws, logits_fn):
-    """8-class RAVDESS model scored on unseen CREMA-D speakers (6 shared emotions)."""
     if not ws.use_cremad():
         return {}
     ws.cremad()
@@ -140,7 +119,6 @@ def cross_eval_ravdess_model(ws, logits_fn):
     return {"cremad_test": metrics(ws.crem_y[te], pred, 6)}
 
 
-# ================================================================ stages
 def stage_prepare(ws):
     df = ws.ravdess()
     print(f"RAVDESS: {len(df)} clips, {df.speaker.nunique()} actors")
@@ -246,7 +224,6 @@ def stage_finetune(ws):
 
 
 def stage_cremad(ws):
-    """Train on CREMA-D (speaker-independent), test on unseen speakers and on RAVDESS."""
     ws.ravdess()
     ws.cremad()
     s = ws.split("cremad")
@@ -302,7 +279,6 @@ def main():
     ap.add_argument("--ft-seeds", nargs="+", type=int, default=[0, 1, 2], help="seeds for RAVDESS fine-tuning")
     ap.add_argument("--cremad-ft-seeds", nargs="+", type=int, default=[0])
     ap.add_argument("--model-name", default=SSL_MODEL)
-    # Fine-tuning defaults were chosen on validation UA only (see docs/finetune_search.md).
     ap.add_argument("--ft-epochs", type=int, default=12)
     ap.add_argument("--ft-lr", type=float, default=3e-5, help="encoder learning rate")
     ap.add_argument("--ft-freeze-epochs", type=int, default=3, help="head-only epochs before unfreezing")

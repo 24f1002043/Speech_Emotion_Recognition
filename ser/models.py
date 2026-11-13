@@ -1,4 +1,3 @@
-"""MFCC-CNN baseline and a self-supervised (WavLM / wav2vec2) classifier."""
 from __future__ import annotations
 
 import librosa
@@ -9,15 +8,13 @@ import torch.nn.functional as F
 
 from .data import SR
 
-# ---------------------------------------------------------------- MFCC baseline
 N_MFCC = 40
-HOP = 160  # 10 ms
+HOP = 160
 
 
 def mfcc_features(y: np.ndarray) -> np.ndarray:
-    """(3, 40, T): MFCCs plus first and second deltas, 25 ms window, 10 ms hop."""
     m = librosa.feature.mfcc(y=y, sr=SR, n_mfcc=N_MFCC, n_fft=512, win_length=400, hop_length=HOP, n_mels=64)
-    if m.shape[1] < 9:  # delta needs at least 9 frames
+    if m.shape[1] < 9:
         m = np.pad(m, ((0, 0), (0, 9 - m.shape[1])), mode="edge")
     return np.stack([m, librosa.feature.delta(m), librosa.feature.delta(m, order=2)]).astype(np.float32)
 
@@ -34,12 +31,11 @@ class MFCCCNN(nn.Module):
         self.features = nn.Sequential(*layers)
         self.head = nn.Sequential(nn.Dropout(dropout), nn.Linear(2 * c, n_classes))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # x: (B, 3, 40, T)
-        h = self.features(x).mean(2)  # average over frequency -> (B, C, T')
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.features(x).mean(2)
         return self.head(torch.cat([h.mean(-1), h.amax(-1)], dim=1))
 
 
-# ---------------------------------------------------------------- SSL model
 SSL_MODEL = "microsoft/wavlm-base-plus"
 
 
@@ -50,28 +46,22 @@ def conv_output_lengths(config, lengths: torch.Tensor) -> torch.Tensor:
 
 
 def masked_layer_means(hidden_states, frame_mask: torch.Tensor | None) -> torch.Tensor:
-    """Tuple of L (B, T, H) tensors -> (B, L, H) time-averaged over valid frames."""
-    h = torch.stack(hidden_states, dim=1).float()  # (B, L, T, H)
+    h = torch.stack(hidden_states, dim=1).float()
     if frame_mask is None:
         return h.mean(2)
     m = frame_mask[:, None, :, None].to(h.dtype)
     return (h * m).sum(2) / m.sum(2).clamp(min=1)
 
 
+# learned weighted sum over all SSL layers, then a small classifier
 class LayerWeightedHead(nn.Module):
-    """SUPERB-style learnable softmax weighting of all layers + small MLP.
-
-    Operates on per-layer, time-averaged vectors. Because averaging is linear,
-    this equals weighting frame-level layers and then averaging, which lets the
-    frozen model be trained on cached features in seconds.
-    """
 
     def __init__(self, n_layers: int, hidden: int, n_classes: int, proj: int = 256, dropout: float = 0.2):
         super().__init__()
         self.layer_logits = nn.Parameter(torch.zeros(n_layers))
         self.mlp = nn.Sequential(nn.Linear(hidden, proj), nn.ReLU(), nn.Dropout(dropout), nn.Linear(proj, n_classes))
 
-    def forward(self, pooled: torch.Tensor) -> torch.Tensor:  # (B, L, H)
+    def forward(self, pooled: torch.Tensor) -> torch.Tensor:
         assert pooled.shape[1] == len(self.layer_logits), (
             f"got {pooled.shape[1]} layers, expected {len(self.layer_logits)} (is LayerDrop on?)")
         pooled = F.layer_norm(pooled, pooled.shape[-1:])
@@ -88,9 +78,6 @@ class SSLClassifier(nn.Module):
         if encoder is None:
             from transformers import AutoModel
             encoder = AutoModel.from_pretrained(model_name)
-        # LayerDrop would randomly skip transformer layers while training, so
-        # output_hidden_states would return fewer than num_hidden_layers + 1 entries
-        # and the fixed layer-weight vector would no longer line up.
         encoder.config.layerdrop = 0.0
         self.encoder = encoder
         cfg = encoder.config

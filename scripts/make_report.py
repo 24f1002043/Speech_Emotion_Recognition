@@ -1,4 +1,3 @@
-"""Aggregate results/runs/*.json into tables (Markdown + JSON) and figures."""
 from __future__ import annotations
 
 import argparse
@@ -16,7 +15,7 @@ from matplotlib.colors import LinearSegmentedColormap
 MODELS = {"mfcc_cnn": "MFCC-CNN (baseline)", "wavlm_frozen": "WavLM Base+ frozen",
           "wavlm_finetune": "WavLM Base+ fine-tuned"}
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
-ACTOR, RANDOM = "#2a78d6", "#eb6834"  # categorical slots 1-2 (validated adjacent pair)
+ACTOR, RANDOM = "#2a78d6", "#eb6834"
 BLUES = LinearSegmentedColormap.from_list("seq_blue", ["#fcfcfb", "#cde2fb", "#86b6ef", "#3987e5", "#1c5cab", "#0d366b"])
 
 plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "axes.edgecolor": GRID, "axes.labelcolor": INK2,

@@ -1,4 +1,3 @@
-"""Training / evaluation loops. Model selection uses validation UA only."""
 from __future__ import annotations
 
 import copy
@@ -23,7 +22,6 @@ def set_seed(seed: int) -> None:
 
 
 def metrics(y_true, y_pred, n_classes: int) -> dict:
-    """UA = unweighted accuracy = mean per-class recall; WA = plain accuracy."""
     return dict(ua=float(balanced_accuracy_score(y_true, y_pred)),
                 wa=float(accuracy_score(y_true, y_pred)),
                 macro_f1=float(f1_score(y_true, y_pred, average="macro")),
@@ -37,12 +35,10 @@ def class_weights(y: np.ndarray, n_classes: int, device) -> torch.Tensor:
 
 
 def restricted_argmax(logits: np.ndarray, keep: list[int]) -> np.ndarray:
-    """Predict only among `keep` columns; returns positions within `keep`."""
     return logits[:, keep].argmax(1)
 
 
-# ================================================================ MFCC-CNN
-CNN_FRAMES = 350  # 3.5 s
+CNN_FRAMES = 350
 
 
 def _crop_pad(x: np.ndarray, T: int, rng: np.random.Generator | None) -> np.ndarray:
@@ -93,7 +89,7 @@ class CNNTrainer:
     def fit(self, tr_feats, tr_y, va_feats, va_y, seed: int) -> dict:
         set_seed(seed)
         rng = np.random.default_rng(seed)
-        cat = np.concatenate(tr_feats, axis=-1)  # normalisation stats from training data only
+        cat = np.concatenate(tr_feats, axis=-1)
         self.mean, self.std = cat.mean(-1, keepdims=True), cat.std(-1, keepdims=True) + 1e-5
         tr = self._norm(tr_feats)
         self.model = MFCCCNN(self.n_classes).to(self.device)
@@ -126,10 +122,8 @@ class CNNTrainer:
         return dict(val_ua=best, best_epoch=best_epoch, epochs_run=len(hist), val_history=hist)
 
 
-# ================================================================ SSL: frozen
 @torch.no_grad()
 def extract_pooled(encoder, waves, device, max_sec: float = 10.0, log_every: int = 500) -> np.ndarray:
-    """Per-layer time-averaged hidden states, one clip at a time (no padding)."""
     model = SSLClassifier(2, encoder=encoder).to(device).eval()
     use_amp = torch.device(device).type == "cuda"
     out = []
@@ -142,6 +136,7 @@ def extract_pooled(encoder, waves, device, max_sec: float = 10.0, log_every: int
     return np.stack(out)
 
 
+# trains only the head on pooled features from the frozen encoder
 class HeadTrainer:
     def __init__(self, n_layers: int, hidden: int, n_classes: int, device, epochs: int = 150, patience: int = 25,
                  batch_size: int = 32, lr: float = 1e-3):
@@ -187,7 +182,6 @@ class HeadTrainer:
                     layer_weights=self.model.layer_weights())
 
 
-# ================================================================ SSL: fine-tuning
 def _length_bucketed_batches(lengths: np.ndarray, batch_size: int, rng: np.random.Generator) -> list:
     perm = rng.permutation(len(lengths))
     batches = []
@@ -205,14 +199,13 @@ class FinetuneTrainer:
                  freeze_epochs: int = 0):
         self.n_classes, self.device, self.model_name, self.epochs = n_classes, device, model_name, epochs
         self.batch_size, self.lr_encoder, self.lr_head = batch_size, lr_encoder, lr_head
-        self.freeze_epochs = freeze_epochs  # train the head alone for this many epochs first
+        self.freeze_epochs = freeze_epochs
         self.max_train = int(max_train_sec * SR)
         self.eval_every = eval_every
         self.amp = torch.device(device).type == "cuda"
 
     @torch.no_grad()
     def logits(self, waves, max_sec: float = 10.0) -> np.ndarray:
-        """Batch size 1: no padding, identical to how the demo scores a recording."""
         self.model.eval()
         out = []
         for w in waves:
@@ -249,7 +242,7 @@ class FinetuneTrainer:
         total, warmup = steps_per_epoch * self.epochs, max(1, int(0.1 * steps_per_epoch * self.epochs))
         freeze_steps = self.freeze_epochs * steps_per_epoch
 
-        def shape(s):  # linear warm-up then linear decay
+        def shape(s):
             return (s + 1) / warmup if s < warmup else max(0.0, (total - s) / max(1, total - warmup))
 
         sched = torch.optim.lr_scheduler.LambdaLR(opt, [lambda s: 0.0 if s < freeze_steps else shape(s), shape])
@@ -259,7 +252,7 @@ class FinetuneTrainer:
         best, best_state, best_epoch, hist = -1.0, None, 0, []
         for ep in range(self.epochs):
             self.model.train()
-            for p in enc:  # head-only warm-up keeps the pretrained encoder intact at first
+            for p in enc:
                 p.requires_grad = ep >= self.freeze_epochs
             t0, run_loss = time.time(), 0.0
             batches = _length_bucketed_batches(lengths, self.batch_size, rng)

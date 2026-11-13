@@ -1,8 +1,3 @@
-"""Generate notebooks/train_colab.ipynb: a self-contained Colab notebook that writes the
-project sources with %%writefile and runs every experiment on the Colab GPU.
-
-Re-run this after editing anything in ser/ or scripts/ so the notebook stays in sync.
-"""
 from __future__ import annotations
 
 import json

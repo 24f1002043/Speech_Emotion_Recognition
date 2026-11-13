@@ -1,4 +1,3 @@
-"""Assemble a self-contained Hugging Face Space in ./space (then upload it with `hf upload`)."""
 from __future__ import annotations
 
 import argparse

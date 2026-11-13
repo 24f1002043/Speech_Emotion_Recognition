@@ -1,8 +1,3 @@
-"""Pack/unpack results/runs as one base64 blob, to move results off a Colab VM without a file download.
-
-On the training machine:   python tools/export_runs.py pack
-Then, locally:             python tools/export_runs.py unpack blob.txt
-"""
 from __future__ import annotations
 
 import base64

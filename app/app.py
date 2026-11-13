@@ -1,8 +1,3 @@
-"""Gradio demo: record your voice, see which of 8 emotions the model hears.
-
-Runs from the repo (`python app/app.py`) or as a Hugging Face Space built with
-`python tools/export_space.py`.
-"""
 from __future__ import annotations
 
 import os
@@ -10,7 +5,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-for p in (HERE, HERE.parent):  # flat Space checkout or repo layout
+for p in (HERE, HERE.parent):
     if (p / "ser").is_dir():
         sys.path.insert(0, str(p))
         break
@@ -32,7 +27,7 @@ MAX_SECONDS = 10
 def load_model(path: Path):
     ck = torch.load(path, map_location="cpu", weights_only=False)
     model = SSLClassifier(len(ck["classes"]), ck["model_name"])
-    if ck["mode"] == "frozen":  # pretrained encoder from the Hub + our small trained head
+    if ck["mode"] == "frozen":
         model.head.load_state_dict(ck["state_dict"])
     else:
         model.load_state_dict({k: v.float() if v.is_floating_point() else v for k, v in ck["state_dict"].items()})
